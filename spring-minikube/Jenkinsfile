@@ -9,7 +9,8 @@ pipeline {
     environment {
         SONARQUBE_ENV = 'sonar-java'
         SONAR_AUTH_TOKEN = credentials('anitha-sonar')
-        KUBECONFIG = "${WORKSPACE}/kubeconfig" // Use copied kubeconfig for Minikube
+        MINIKUBE_HOME = '/var/lib/jenkins/.minikube' // Jenkins-accessible copy of .minikube
+        KUBECONFIG = "${MINIKUBE_HOME}/config"       // Use this kubeconfig in all kubectl commands
     }
 
     stages {
@@ -123,11 +124,11 @@ pipeline {
         stage('Deploy to Minikube') {
             steps {
                 sh '''
-                kubectl apply --kubeconfig=$KUBECONFIG -f spring-minikube/devops/deployment-student.yml
-                kubectl apply --kubeconfig=$KUBECONFIG -f spring-minikube/devops/service-student.yml
-                kubectl apply --kubeconfig=$KUBECONFIG -f spring-minikube/devops/deployment-rating.yml
-                kubectl apply --kubeconfig=$KUBECONFIG -f spring-minikube/devops/service-rating.yml
-                kubectl apply --kubeconfig=$KUBECONFIG -f spring-minikube/devops/ingress.yml
+                kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/deployment-student.yml
+                kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/service-student.yml
+                kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/deployment-rating.yml
+                kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/service-rating.yml
+                kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/ingress.yml
                 '''
             }
         }
