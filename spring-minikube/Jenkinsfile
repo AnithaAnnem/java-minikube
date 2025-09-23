@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'GIT_URL', defaultValue: 'https://github.com/nhatthaiquang-agilityio/spring-minikube.git', description: 'Git repository URL')
-        string(name: 'BRANCH', defaultValue: 'master', description: 'Branch to build')
-    }
+    string(name: 'GIT_URL', defaultValue: 'https://github.com/AnithaAnnem/java-minikube.git', description: 'Git repository URL')
+    string(name: 'BRANCH', defaultValue: 'main', description: 'Branch to build')
+}
 
     environment {
         SONARQUBE_ENV = 'sonar-java'   // Jenkins SonarQube server name
