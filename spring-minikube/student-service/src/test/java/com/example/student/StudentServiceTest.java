@@ -1,13 +1,13 @@
 package com.example.student;
 
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class StudentServiceTest {
 
     @Test
-    void testAddition() {
+    public void testAddition() {
         int result = 2 + 3;
-        assertEquals(5, result, "Simple addition should work");
+        assertEquals("Simple addition should work", 5, result);
     }
 }
