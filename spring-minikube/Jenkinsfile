@@ -9,6 +9,7 @@ pipeline {
     environment {
         SONARQUBE_ENV = 'sonar-java'
         SONAR_AUTH_TOKEN = credentials('anitha-sonar')
+        KUBECONFIG = "${WORKSPACE}/kubeconfig" // Use copied kubeconfig for Minikube
     }
 
     stages {
@@ -122,11 +123,11 @@ pipeline {
         stage('Deploy to Minikube') {
             steps {
                 sh '''
-                kubectl apply -f spring-minikube/devops/deployment-student.yml
-                kubectl apply -f spring-minikube/devops/service-student.yml
-                kubectl apply -f spring-minikube/devops/deployment-rating.yml
-                kubectl apply -f spring-minikube/devops/service-rating.yml
-                kubectl apply -f spring-minikube/devops/ingress.yml
+                kubectl apply --kubeconfig=$KUBECONFIG -f spring-minikube/devops/deployment-student.yml
+                kubectl apply --kubeconfig=$KUBECONFIG -f spring-minikube/devops/service-student.yml
+                kubectl apply --kubeconfig=$KUBECONFIG -f spring-minikube/devops/deployment-rating.yml
+                kubectl apply --kubeconfig=$KUBECONFIG -f spring-minikube/devops/service-rating.yml
+                kubectl apply --kubeconfig=$KUBECONFIG -f spring-minikube/devops/ingress.yml
                 '''
             }
         }
@@ -149,6 +150,7 @@ pipeline {
                 }
             }
         }
+
     }
 
     post {
@@ -156,10 +158,10 @@ pipeline {
             echo "Pipeline finished. Sending notifications..."
         }
         success {
-            echo " Build, Security Checks & Deployment Successful!"
+            echo "Build, Security Checks & Deployment Successful!"
         }
         failure {
-            echo " Pipeline Failed!"
+            echo "Pipeline Failed!"
         }
     }
 }
