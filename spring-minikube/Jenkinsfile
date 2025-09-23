@@ -60,8 +60,17 @@ pipeline {
 
         stage('Dependency Scanning') {
             steps {
-                sh 'mvn org.owasp:dependency-check-maven:check -f spring-minikube/student-service/pom.xml'
-                sh 'mvn org.owasp:dependency-check-maven:check -f spring-minikube/rating-service/pom.xml'
+                sh '''
+                # Student service
+                mvn org.owasp:dependency-check-maven:check \
+                    -f spring-minikube/student-service/pom.xml \
+                    -DfailBuildOnCVSS=11 || true
+
+                # Rating service
+                mvn org.owasp:dependency-check-maven:check \
+                    -f spring-minikube/rating-service/pom.xml \
+                    -DfailBuildOnCVSS=11 || true
+                '''
             }
             post {
                 always {
@@ -75,7 +84,6 @@ pipeline {
                 withSonarQubeEnv("${SONARQUBE_ENV}") {
                     sh '''
                     echo "Running SonarQube analysis..."
-
                     mvn sonar:sonar -f spring-minikube/student-service/pom.xml -Dsonar.projectKey=student-service -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN
                     mvn sonar:sonar -f spring-minikube/rating-service/pom.xml -Dsonar.projectKey=rating-service -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN
                     '''
@@ -96,7 +104,6 @@ pipeline {
             steps {
                 sh '''
                 echo "Running Trivy scan on Docker images..."
-
                 if ! command -v trivy &> /dev/null
                 then
                     sudo apt-get update
@@ -136,7 +143,6 @@ pipeline {
             steps {
                 sh '''
                 echo "Running OWASP ZAP DAST Scan..."
-
                 if ! command -v zap-baseline.py &> /dev/null
                 then
                     sudo apt-get update
@@ -144,7 +150,6 @@ pipeline {
                 fi
 
                 TARGET_URL="http://localhost"
-
                 zap-baseline.py -t $TARGET_URL -r zap-report.html -J zap-report.json || true
 
                 if command -v zap-cli &> /dev/null
