@@ -7,7 +7,8 @@ pipeline {
     }
 
     environment {
-        SONARQUBE_ENV = 'sonar-java'   // SonarQube server name configured in Jenkins
+        SONARQUBE_ENV = 'sonar-java'   
+        SONAR_AUTH_TOKEN = credentials('SONAR') 
     }
 
     stages {
@@ -74,12 +75,18 @@ pipeline {
 
         stage('Static Analysis & Bug Analysis - SonarQube') {
             steps {
-                // Use Jenkins SonarQube environment correctly
-                withSonarQubeEnv('sonar-java') {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
                     sh '''
                     echo "Running SonarQube analysis..."
-                    mvn sonar:sonar -f spring-minikube/student-service/pom.xml -Dsonar.projectKey=student-service
-                    mvn sonar:sonar -f spring-minikube/rating-service/pom.xml -Dsonar.projectKey=rating-service
+                    mvn sonar:sonar -f spring-minikube/student-service/pom.xml \
+                        -Dsonar.projectKey=student-service \
+                        -Dsonar.host.url=http://localhost:9000 \
+                        -Dsonar.login=${SONAR_AUTH_TOKEN}
+
+                    mvn sonar:sonar -f spring-minikube/rating-service/pom.xml \
+                        -Dsonar.projectKey=rating-service \
+                        -Dsonar.host.url=http://localhost:9000 \
+                        -Dsonar.login=${SONAR_AUTH_TOKEN}
                     '''
                 }
             }
@@ -162,10 +169,10 @@ pipeline {
             echo "Pipeline finished. Sending notifications..."
         }
         success {
-            echo "✅ Build, Security Checks & Deployment Successful!"
+            echo " Build, Security Checks & Deployment Successful!"
         }
         failure {
-            echo "❌ Pipeline Failed!"
+            echo " Pipeline Failed!"
         }
     }
 }
