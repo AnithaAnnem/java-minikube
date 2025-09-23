@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        SONARQUBE_ENV = 'sonar-java'   // SonarQube server name
+        SONARQUBE_ENV = 'sonar-java'   // SonarQube server name configured in Jenkins
     }
 
     stages {
@@ -61,15 +61,8 @@ pipeline {
         stage('Dependency Scanning') {
             steps {
                 sh '''
-                # Student service
-                mvn org.owasp:dependency-check-maven:check \
-                    -f spring-minikube/student-service/pom.xml \
-                    -DfailBuildOnCVSS=11 || true
-
-                # Rating service
-                mvn org.owasp:dependency-check-maven:check \
-                    -f spring-minikube/rating-service/pom.xml \
-                    -DfailBuildOnCVSS=11 || true
+                mvn org.owasp:dependency-check-maven:check -f spring-minikube/student-service/pom.xml -DfailBuildOnCVSS=11 || true
+                mvn org.owasp:dependency-check-maven:check -f spring-minikube/rating-service/pom.xml -DfailBuildOnCVSS=11 || true
                 '''
             }
             post {
@@ -81,11 +74,12 @@ pipeline {
 
         stage('Static Analysis & Bug Analysis - SonarQube') {
             steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                // Use Jenkins SonarQube environment correctly
+                withSonarQubeEnv('sonar-java') {
                     sh '''
                     echo "Running SonarQube analysis..."
-                    mvn sonar:sonar -f spring-minikube/student-service/pom.xml -Dsonar.projectKey=student-service -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN
-                    mvn sonar:sonar -f spring-minikube/rating-service/pom.xml -Dsonar.projectKey=rating-service -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN
+                    mvn sonar:sonar -f spring-minikube/student-service/pom.xml -Dsonar.projectKey=student-service
+                    mvn sonar:sonar -f spring-minikube/rating-service/pom.xml -Dsonar.projectKey=rating-service
                     '''
                 }
             }
@@ -113,7 +107,6 @@ pipeline {
                     sudo apt-get update
                     sudo apt-get install -y trivy
                 fi
-
                 trivy image --exit-code 0 --format table -o student-service-trivy-report.txt student-service:latest
                 trivy image --exit-code 0 --format table -o rating-service-trivy-report.txt rating-service:latest
                 trivy image --exit-code 0 --format json -o student-service-trivy-report.json student-service:latest
@@ -148,10 +141,8 @@ pipeline {
                     sudo apt-get update
                     sudo apt-get install -y zaproxy
                 fi
-
                 TARGET_URL="http://localhost"
                 zap-baseline.py -t $TARGET_URL -r zap-report.html -J zap-report.json || true
-
                 if command -v zap-cli &> /dev/null
                 then
                     zap-cli report -o zap-report-full.html -f html
