@@ -106,15 +106,6 @@ pipeline {
             steps {
                 sh '''
                 echo "Running Trivy scan on Docker images..."
-                if ! command -v trivy &> /dev/null
-                then
-                    sudo apt-get update
-                    sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-                    wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-                    echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
-                    sudo apt-get update
-                    sudo apt-get install -y trivy
-                fi
                 trivy image --exit-code 0 --format table -o student-service-trivy-report.txt student-service:latest
                 trivy image --exit-code 0 --format table -o rating-service-trivy-report.txt rating-service:latest
                 trivy image --exit-code 0 --format json -o student-service-trivy-report.json student-service:latest
@@ -144,11 +135,6 @@ pipeline {
             steps {
                 sh '''
                 echo "Running OWASP ZAP DAST Scan..."
-                if ! command -v zap-baseline.py &> /dev/null
-                then
-                    sudo apt-get update
-                    sudo apt-get install -y zaproxy
-                fi
                 TARGET_URL="http://localhost"
                 zap-baseline.py -t $TARGET_URL -r zap-report.html -J zap-report.json || true
                 if command -v zap-cli &> /dev/null
@@ -163,7 +149,6 @@ pipeline {
                 }
             }
         }
-
     }
 
     post {
