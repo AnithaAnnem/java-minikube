@@ -7,11 +7,12 @@ pipeline {
     }
 
     environment {
-        SONARQUBE_ENV = 'sonar-java'   
-        SONAR_AUTH_TOKEN = credentials('anitha-sonar') 
+        SONARQUBE_ENV = 'sonar-java'
+        SONAR_AUTH_TOKEN = credentials('anitha-sonar')
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 git branch: "${params.BRANCH}", url: "${params.GIT_URL}"
@@ -40,10 +41,10 @@ pipeline {
             }
         }
 
-        stage('Code Compilation') {
+        stage('Package Applications') {
             steps {
-                sh 'mvn clean compile -f spring-minikube/student-service/pom.xml'
-                sh 'mvn clean compile -f spring-minikube/rating-service/pom.xml'
+                sh 'mvn clean package -f spring-minikube/student-service/pom.xml'
+                sh 'mvn clean package -f spring-minikube/rating-service/pom.xml'
             }
         }
 
@@ -162,6 +163,7 @@ pipeline {
                 }
             }
         }
+
     }
 
     post {
