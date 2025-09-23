@@ -1,12 +1,12 @@
 package com.example.rating;
 
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.Test;
+import static org.junit.Assert.assertTrue;
 
 public class RatingServiceTest {
 
     @Test
-    void testTrue() {
-        assertTrue(true, "This test always passes");
+    public void testTrue() {
+        assertTrue("This test always passes", true);
     }
 }
