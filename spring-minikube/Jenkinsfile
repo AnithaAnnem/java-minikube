@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         SONARQUBE_ENV = 'sonar-java'   
-        SONAR_AUTH_TOKEN = credentials('anitha-jenkins') 
+        SONAR_AUTH_TOKEN = credentials('anitha-sonar') 
     }
 
     stages {
