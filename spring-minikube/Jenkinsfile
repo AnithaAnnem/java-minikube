@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         SONARQUBE_ENV = 'sonar-java'   
-        SONAR_AUTH_TOKEN = credentials('SONAR') 
+        SONAR_AUTH_TOKEN = credentials('sonar-token') 
     }
 
     stages {
