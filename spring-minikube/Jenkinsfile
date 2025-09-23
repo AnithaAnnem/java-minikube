@@ -2,12 +2,12 @@ pipeline {
     agent any
 
     parameters {
-    string(name: 'GIT_URL', defaultValue: 'https://github.com/AnithaAnnem/java-minikube.git', description: 'Git repository URL')
-    string(name: 'BRANCH', defaultValue: 'main', description: 'Branch to build')
-}
+        string(name: 'GIT_URL', defaultValue: 'https://github.com/AnithaAnnem/java-minikube.git', description: 'Git repository URL')
+        string(name: 'BRANCH', defaultValue: 'main', description: 'Branch to build')
+    }
 
     environment {
-        SONARQUBE_ENV = 'sonar-java'   // Jenkins SonarQube server name
+        SONARQUBE_ENV = 'sonar-java'   // SonarQube server name
     }
 
     stages {
@@ -46,38 +46,14 @@ pipeline {
             }
         }
 
-        stage('Unit Testing & Coverage') {
+        stage('Unit Testing') {
             steps {
-                sh 'mvn test jacoco:report -f spring-minikube/student-service/pom.xml'
-                sh 'mvn test jacoco:report -f spring-minikube/rating-service/pom.xml'
+                sh 'mvn test -f spring-minikube/student-service/pom.xml'
+                sh 'mvn test -f spring-minikube/rating-service/pom.xml'
             }
             post {
                 always {
                     junit 'spring-minikube/**/target/surefire-reports/*.xml'
-                }
-            }
-        }
-
-        stage('Static Analysis & Bug Analysis - SonarQube') {
-            steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    sh '''
-                    echo "Running SonarQube analysis..."
-
-                    # Student Service
-                    mvn sonar:sonar \
-                        -f spring-minikube/student-service/pom.xml \
-                        -Dsonar.projectKey=student-service \
-                        -Dsonar.host.url=$SONAR_HOST_URL \
-                        -Dsonar.login=$SONAR_AUTH_TOKEN
-
-                    # Rating Service
-                    mvn sonar:sonar \
-                        -f spring-minikube/rating-service/pom.xml \
-                        -Dsonar.projectKey=rating-service \
-                        -Dsonar.host.url=$SONAR_HOST_URL \
-                        -Dsonar.login=$SONAR_AUTH_TOKEN
-                    '''
                 }
             }
         }
@@ -90,6 +66,19 @@ pipeline {
             post {
                 always {
                     archiveArtifacts artifacts: 'spring-minikube/**/target/dependency-check-report.html', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Static Analysis & Bug Analysis - SonarQube') {
+            steps {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    sh '''
+                    echo "Running SonarQube analysis..."
+
+                    mvn sonar:sonar -f spring-minikube/student-service/pom.xml -Dsonar.projectKey=student-service -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN
+                    mvn sonar:sonar -f spring-minikube/rating-service/pom.xml -Dsonar.projectKey=rating-service -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN
+                    '''
                 }
             }
         }
@@ -108,7 +97,6 @@ pipeline {
                 sh '''
                 echo "Running Trivy scan on Docker images..."
 
-                # Install Trivy if not available
                 if ! command -v trivy &> /dev/null
                 then
                     sudo apt-get update
@@ -119,7 +107,6 @@ pipeline {
                     sudo apt-get install -y trivy
                 fi
 
-                # Scan images and generate TXT & JSON reports
                 trivy image --exit-code 0 --format table -o student-service-trivy-report.txt student-service:latest
                 trivy image --exit-code 0 --format table -o rating-service-trivy-report.txt rating-service:latest
                 trivy image --exit-code 0 --format json -o student-service-trivy-report.json student-service:latest
@@ -150,7 +137,6 @@ pipeline {
                 sh '''
                 echo "Running OWASP ZAP DAST Scan..."
 
-                # Install ZAP if not available
                 if ! command -v zap-baseline.py &> /dev/null
                 then
                     sudo apt-get update
@@ -159,10 +145,8 @@ pipeline {
 
                 TARGET_URL="http://localhost"
 
-                # Run ZAP Baseline Scan
                 zap-baseline.py -t $TARGET_URL -r zap-report.html -J zap-report.json || true
 
-                # Optional: generate full HTML report
                 if command -v zap-cli &> /dev/null
                 then
                     zap-cli report -o zap-report-full.html -f html
