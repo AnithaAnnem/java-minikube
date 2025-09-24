@@ -9,8 +9,8 @@ pipeline {
     environment {
         SONARQUBE_ENV = 'sonar-java'
         SONAR_AUTH_TOKEN = credentials('anitha-sonar')
-        KUBECONFIG = '/var/lib/jenkins/.kube/config'
-        MINIKUBE_HOME = '/var/lib/jenkins/.minikube'  // ensures Jenkins has its own Minikube config
+        MINIKUBE_HOME = '/var/lib/jenkins/.minikube'
+        HOME = '/var/lib/jenkins'
         DOCKERHUB_USER = "anithaannem"
     }
 
@@ -131,25 +131,24 @@ pipeline {
         }
 
         stage('Start Minikube') {
-    steps {
-        sh '''
-        export MINIKUBE_HOME=/var/lib/jenkins/.minikube
-        export HOME=/var/lib/jenkins
-        minikube delete || true
-        minikube start --driver=docker
-        minikube status
-        '''
-    }
-}
-
+            steps {
+                sh '''
+                export MINIKUBE_HOME=/var/lib/jenkins/.minikube
+                export HOME=/var/lib/jenkins
+                minikube delete || true
+                minikube start --driver=docker
+                minikube status
+                '''
+            }
+        }
 
         stage('Setup K8s Configs') {
             steps {
                 sh '''
                 echo "Applying K8s Configurations..."
-                kubectl apply -f spring-minikube/devops/configmap.yml || true
-                kubectl apply -f spring-minikube/devops/secret.yml || true
-                kubectl apply -f spring-minikube/devops/ingress.yml || true
+                minikube kubectl -- apply -f spring-minikube/devops/configmap.yml || true
+                minikube kubectl -- apply -f spring-minikube/devops/secret.yml || true
+                minikube kubectl -- apply -f spring-minikube/devops/ingress.yml || true
                 '''
             }
         }
@@ -157,8 +156,8 @@ pipeline {
         stage('Deploy Student Service') {
             steps {
                 sh '''
-                kubectl apply -f spring-minikube/devops/deployment-student.yml
-                kubectl apply -f spring-minikube/devops/service-student.yml
+                minikube kubectl -- apply -f spring-minikube/devops/deployment-student.yml
+                minikube kubectl -- apply -f spring-minikube/devops/service-student.yml
                 '''
             }
         }
@@ -166,8 +165,8 @@ pipeline {
         stage('Deploy Rating Service') {
             steps {
                 sh '''
-                kubectl apply -f spring-minikube/devops/deployment-rating.yml
-                kubectl apply -f spring-minikube/devops/service-rating.yml
+                minikube kubectl -- apply -f spring-minikube/devops/deployment-rating.yml
+                minikube kubectl -- apply -f spring-minikube/devops/service-rating.yml
                 '''
             }
         }
@@ -180,8 +179,8 @@ pipeline {
                 TARGET_STUDENT="http://$MINIKUBE_IP:30001/student"
                 TARGET_RATING="http://$MINIKUBE_IP:30002/rating"
 
-                kubectl --kubeconfig=$KUBECONFIG wait --for=condition=ready pod -l run=student-service --timeout=60s
-                kubectl --kubeconfig=$KUBECONFIG wait --for=condition=ready pod -l run=rating-service --timeout=60s
+                minikube kubectl -- wait --for=condition=ready pod -l run=student-service --timeout=180s
+                minikube kubectl -- wait --for=condition=ready pod -l run=rating-service --timeout=180s
 
                 docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
                     -t $TARGET_STUDENT -r zap-student-report.html -J zap-student-report.json || true
