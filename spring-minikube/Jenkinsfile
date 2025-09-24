@@ -131,14 +131,15 @@ pipeline {
         }
 
         stage('Start Minikube') {
-            steps {
-                sh '''
-                echo "Starting Minikube..."
-                minikube start --driver=docker
-                minikube status
-                '''
-            }
-        }
+    steps {
+        sh '''
+        export MINIKUBE_HOME=/var/lib/jenkins/.minikube
+        minikube start --driver=docker
+        minikube status
+        '''
+    }
+}
+
 
         stage('Setup K8s Configs') {
             steps {
