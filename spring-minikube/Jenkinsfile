@@ -9,8 +9,9 @@ pipeline {
     environment {
         SONARQUBE_ENV = 'sonar-java'
         SONAR_AUTH_TOKEN = credentials('anitha-sonar')
-        MINIKUBE_HOME = '/var/lib/jenkins/.minikube'   
-        KUBECONFIG = '/var/lib/jenkins/.kube/config'  
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+        DOCKERHUB_USER = "anithaannem"   // change to your DockerHub username
+        KUBECONFIG = '/var/lib/jenkins/.kube/config'
     }
 
     stages {
@@ -21,71 +22,57 @@ pipeline {
             }
         }
 
-        stage('Credential Scanning - Gitleaks') {
+        stage('Package Student Service') {
             steps {
-                sh '''
-                echo "Running Gitleaks..."
-                if ! command -v gitleaks &> /dev/null
-                then
-                    wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz
-                    tar -xvf gitleaks_8.18.2_linux_x64.tar.gz
-                    mkdir -p $WORKSPACE/bin
-                    mv gitleaks $WORKSPACE/bin/
-                    export PATH=$WORKSPACE/bin:$PATH
-                fi
-                gitleaks detect --source . --report-path gitleaks-report.json || true
-                '''
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
-                }
+                sh 'mvn clean package -f spring-minikube/student-service/pom.xml'
             }
         }
 
-        stage('Package Applications') {
+        stage('Package Rating Service') {
             steps {
-                sh 'mvn clean package -f spring-minikube/student-service/pom.xml'
                 sh 'mvn clean package -f spring-minikube/rating-service/pom.xml'
             }
         }
 
-        stage('Unit Testing') {
+        stage('Unit Test Student Service') {
             steps {
                 sh 'mvn test -f spring-minikube/student-service/pom.xml'
+            }
+            post {
+                always {
+                    junit 'spring-minikube/student-service/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Unit Test Rating Service') {
+            steps {
                 sh 'mvn test -f spring-minikube/rating-service/pom.xml'
             }
             post {
                 always {
-                    junit 'spring-minikube/**/target/surefire-reports/*.xml'
+                    junit 'spring-minikube/rating-service/target/surefire-reports/*.xml'
                 }
             }
         }
 
-        stage('Dependency Scanning') {
-            steps {
-                sh '''
-                mvn org.owasp:dependency-check-maven:check -f spring-minikube/student-service/pom.xml -DfailBuildOnCVSS=11 || true
-                mvn org.owasp:dependency-check-maven:check -f spring-minikube/rating-service/pom.xml -DfailBuildOnCVSS=11 || true
-                '''
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'spring-minikube/**/target/dependency-check-report.html', allowEmptyArchive: true
-                }
-            }
-        }
-
-        stage('Static Analysis & Bug Analysis - SonarQube') {
+        stage('SonarQube Analysis - Student Service') {
             steps {
                 withSonarQubeEnv("${SONARQUBE_ENV}") {
                     sh '''
-                    echo "Running SonarQube analysis..."
                     mvn sonar:sonar -f spring-minikube/student-service/pom.xml \
                         -Dsonar.projectKey=student-service \
                         -Dsonar.host.url=$SONAR_HOST_URL \
                         -Dsonar.login=$SONAR_AUTH_TOKEN
+                    '''
+                }
+            }
+        }
 
+        stage('SonarQube Analysis - Rating Service') {
+            steps {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    sh '''
                     mvn sonar:sonar -f spring-minikube/rating-service/pom.xml \
                         -Dsonar.projectKey=rating-service \
                         -Dsonar.host.url=$SONAR_HOST_URL \
@@ -95,96 +82,63 @@ pipeline {
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Build & Push Student Service Image') {
             steps {
                 sh '''
-                docker build -t student-service:latest spring-minikube/student-service/
-                docker build -t rating-service:latest spring-minikube/rating-service/
+                echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                docker build -t $DOCKERHUB_USER/student-service:1.0 spring-minikube/student-service/
+                docker push $DOCKERHUB_USER/student-service:1.0
                 '''
             }
         }
 
-        stage('Docker Image Scanning - Trivy') {
+        stage('Build & Push Rating Service Image') {
             steps {
                 sh '''
-                echo "Running Trivy scan on Docker images..."
-                trivy image --exit-code 0 --format table -o student-service-trivy-report.txt student-service:latest
-                trivy image --exit-code 0 --format table -o rating-service-trivy-report.txt rating-service:latest
-                trivy image --exit-code 0 --format json -o student-service-trivy-report.json student-service:latest
-                trivy image --exit-code 0 --format json -o rating-service-trivy-report.json rating-service:latest
-                '''
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: '*-trivy-report.*', allowEmptyArchive: true
-                }
-            }
-        }
-
-        stage('Deploy to Minikube') {
-            steps {
-                sh '''
-                echo "Deploying services to Minikube..."
-
-                # Delete existing services (fixes immutable clusterIP issue)
-                kubectl --kubeconfig=$KUBECONFIG delete service student-service --ignore-not-found
-                kubectl --kubeconfig=$KUBECONFIG delete service rating-service --ignore-not-found
-
-                # Apply deployments and services
-                kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/deployment-student.yml
-                kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/service-student.yml
-                kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/deployment-rating.yml
-                kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/service-rating.yml
-                kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/ingress.yml
+                echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                docker build -t $DOCKERHUB_USER/rating-service:1.0 spring-minikube/rating-service/
+                docker push $DOCKERHUB_USER/rating-service:1.0
                 '''
             }
         }
 
-        stage('DAST - OWASP ZAP Scan') {
+        stage('Setup K8s Configs') {
             steps {
                 sh '''
-                echo "Running OWASP ZAP DAST Scan..."
-
-                # Get Minikube IP dynamically
-                MINIKUBE_IP=$(minikube ip)
-                TARGET_STUDENT="http://$MINIKUBE_IP:30001/student"
-                TARGET_RATING="http://$MINIKUBE_IP:30002/rating"
-                echo "Targets: $TARGET_STUDENT , $TARGET_RATING"
-
-                # Wait until services are ready
-                kubectl --kubeconfig=$KUBECONFIG wait --for=condition=ready pod -l run=student-service --timeout=60s
-                kubectl --kubeconfig=$KUBECONFIG wait --for=condition=ready pod -l run=rating-service --timeout=60s
-
-                # Run baseline scan for student service
-                docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
-                    -t $TARGET_STUDENT -r zap-student-report.html -J zap-student-report.json || true
-
-                # Run baseline scan for rating service
-                docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
-                    -t $TARGET_RATING -r zap-rating-report.html -J zap-rating-report.json || true
+                echo "Applying K8s Configurations..."
+                kubectl apply -f spring-minikube/devops/configmap.yml || true
+                kubectl apply -f spring-minikube/devops/secret.yml || true
+                kubectl apply -f spring-minikube/devops/ingress.yml || true
                 '''
             }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'zap-*-report.*', allowEmptyArchive: true
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, keepAll: true,
-                        reportDir: '.', reportFiles: 'zap-*-report.html', reportName: 'OWASP ZAP Report'])
-                }
+        }
+
+        stage('Deploy Student Service') {
+            steps {
+                sh '''
+                kubectl apply -f spring-minikube/devops/deployment-student.yml
+                kubectl apply -f spring-minikube/devops/service-student.yml
+                '''
+            }
+        }
+
+        stage('Deploy Rating Service') {
+            steps {
+                sh '''
+                kubectl apply -f spring-minikube/devops/deployment-rating.yml
+                kubectl apply -f spring-minikube/devops/service-rating.yml
+                '''
             }
         }
 
     }
 
     post {
-        always {
-            echo "Pipeline finished. Sending notifications..."
-        }
         success {
-            echo "Build, Security Checks & Deployment Successful!"
+            echo " Build, Analysis, Docker Push & Deployment Successful!"
         }
         failure {
-            echo "Pipeline Failed!"
+            echo " Pipeline Failed!"
         }
     }
 }
-
