@@ -172,33 +172,47 @@ pipeline {
         }
 
         stage('DAST - OWASP ZAP Scan') {
-            steps {
-                sh '''
-                echo "Running OWASP ZAP DAST Scan..."
-                MINIKUBE_IP=$(minikube ip)
-                TARGET_STUDENT="http://$MINIKUBE_IP:30001/student"
-                TARGET_RATING="http://$MINIKUBE_IP:30002/rating"
+    steps {
+        sh '''
+        echo "Running OWASP ZAP DAST Scan..."
 
-                minikube kubectl -- wait --for=condition=ready pod -l run=student-service --timeout=180s
-                minikube kubectl -- wait --for=condition=ready pod -l run=rating-service --timeout=180s
+        MINIKUBE_IP=$(minikube ip)
+        TARGET_STUDENT="http://$MINIKUBE_IP:30001/student"
+        TARGET_RATING="http://$MINIKUBE_IP:30002/rating"
 
-                docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
-                    -t $TARGET_STUDENT -r zap-student-report.html -J zap-student-report.json || true
+        echo "Checking if student-service pod exists..."
+        if minikube kubectl -- get pods -l run=student-service --no-headers | grep -q student-service; then
+            echo "Waiting for student-service pod to be ready..."
+            minikube kubectl -- wait --for=condition=ready pod -l run=student-service --timeout=180s || echo "student-service pod not fully ready"
+        else
+            echo "student-service pod not found, skipping wait."
+        fi
 
-                docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
-                    -t $TARGET_RATING -r zap-rating-report.html -J zap-rating-report.json || true
-                '''
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'zap-*-report.*', allowEmptyArchive: true
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, keepAll: true,
-                        reportDir: '.', reportFiles: 'zap-*-report.html', reportName: 'OWASP ZAP Report'])
-                }
-            }
-        }
+        echo "Checking if rating-service pod exists..."
+        if minikube kubectl -- get pods -l run=rating-service --no-headers | grep -q rating-service; then
+            echo "Waiting for rating-service pod to be ready..."
+            minikube kubectl -- wait --for=condition=ready pod -l run=rating-service --timeout=180s || echo "rating-service pod not fully ready"
+        else
+            echo "rating-service pod not found, skipping wait."
+        fi
 
+        echo "Running OWASP ZAP scan on Student Service..."
+        docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
+            -t $TARGET_STUDENT -r zap-student-report.html -J zap-student-report.json || true
+
+        echo "Running OWASP ZAP scan on Rating Service..."
+        docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
+            -t $TARGET_RATING -r zap-rating-report.html -J zap-rating-report.json || true
+        '''
     }
+    post {
+        always {
+            archiveArtifacts artifacts: 'zap-*-report.*', allowEmptyArchive: true
+            publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, keepAll: true,
+                reportDir: '.', reportFiles: 'zap-*-report.html', reportName: 'OWASP ZAP Report'])
+        }
+    }
+}
 
     post {
         success { echo " Pipeline Successful: Build, Analysis, Docker Push & Deployment Completed!" }
