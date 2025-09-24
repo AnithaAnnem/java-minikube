@@ -9,8 +9,8 @@ pipeline {
     environment {
         SONARQUBE_ENV = 'sonar-java'
         SONAR_AUTH_TOKEN = credentials('anitha-sonar')
-        MINIKUBE_HOME = '/var/lib/jenkins/.minikube' // Jenkins-accessible copy of .minikube
-        KUBECONFIG = "${MINIKUBE_HOME}/config"       // Use this kubeconfig in all kubectl commands
+        MINIKUBE_HOME = '/var/lib/jenkins/.minikube'   
+        KUBECONFIG = '/var/lib/jenkins/.kube/config'  
     }
 
     stages {
@@ -83,13 +83,13 @@ pipeline {
                     echo "Running SonarQube analysis..."
                     mvn sonar:sonar -f spring-minikube/student-service/pom.xml \
                         -Dsonar.projectKey=student-service \
-                        -Dsonar.host.url=http://localhost:9000 \
-                        -Dsonar.login=${SONAR_AUTH_TOKEN}
+                        -Dsonar.host.url=$SONAR_HOST_URL \
+                        -Dsonar.login=$SONAR_AUTH_TOKEN
 
                     mvn sonar:sonar -f spring-minikube/rating-service/pom.xml \
                         -Dsonar.projectKey=rating-service \
-                        -Dsonar.host.url=http://localhost:9000 \
-                        -Dsonar.login=${SONAR_AUTH_TOKEN}
+                        -Dsonar.host.url=$SONAR_HOST_URL \
+                        -Dsonar.login=$SONAR_AUTH_TOKEN
                     '''
                 }
             }
@@ -124,6 +124,7 @@ pipeline {
         stage('Deploy to Minikube') {
             steps {
                 sh '''
+                echo "Deploying services to Minikube..."
                 kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/deployment-student.yml
                 kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/service-student.yml
                 kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/deployment-rating.yml
@@ -137,17 +138,20 @@ pipeline {
             steps {
                 sh '''
                 echo "Running OWASP ZAP DAST Scan..."
-                TARGET_URL="http://localhost"
-                zap-baseline.py -t $TARGET_URL -r zap-report.html -J zap-report.json || true
-                if command -v zap-cli &> /dev/null
-                then
-                    zap-cli report -o zap-report-full.html -f html
-                fi
+                # Get Minikube IP dynamically
+                MINIKUBE_IP=$(minikube ip)
+                TARGET_URL="http://$MINIKUBE_IP"
+                echo "Target: $TARGET_URL"
+
+                docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
+                    -t $TARGET_URL -r zap-report.html -J zap-report.json || true
                 '''
             }
             post {
                 always {
-                    archiveArtifacts artifacts: 'zap-report.html,zap-report.json,zap-report-full.html', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'zap-report.html,zap-report.json', allowEmptyArchive: true
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, keepAll: true,
+                        reportDir: '.', reportFiles: 'zap-report.html', reportName: 'OWASP ZAP Report'])
                 }
             }
         }
@@ -159,10 +163,10 @@ pipeline {
             echo "Pipeline finished. Sending notifications..."
         }
         success {
-            echo "Build, Security Checks & Deployment Successful!"
+            echo " Build, Security Checks & Deployment Successful!"
         }
         failure {
-            echo "Pipeline Failed!"
+            echo " Pipeline Failed!"
         }
     }
 }
