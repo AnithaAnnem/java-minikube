@@ -1,14 +1,14 @@
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
   name: rating-service
 spec:
-  type: NodePort         # change here
+  type: NodePort
   selector:
     run: rating-service
   ports:
-    - name: port1
+    - name: http
       protocol: TCP
       port: 5000
       targetPort: 5000
-      nodePort: 30002    # assign a free port
+      nodePort: 30002
