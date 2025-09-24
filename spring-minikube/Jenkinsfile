@@ -139,6 +139,15 @@ pipeline {
                 '''
             }
         }
+        stage('Start Minikube') {
+    steps {
+        sh '''
+        echo "Starting Minikube..."
+        minikube start --driver=docker
+        minikube status
+        '''
+    }
+}
 
         stage('Deploy Student Service') {
             steps {
