@@ -125,6 +125,12 @@ pipeline {
             steps {
                 sh '''
                 echo "Deploying services to Minikube..."
+
+                # Delete existing services (fixes immutable clusterIP issue)
+                kubectl --kubeconfig=$KUBECONFIG delete service student-service --ignore-not-found
+                kubectl --kubeconfig=$KUBECONFIG delete service rating-service --ignore-not-found
+
+                # Apply deployments and services
                 kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/deployment-student.yml
                 kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/service-student.yml
                 kubectl --kubeconfig=$KUBECONFIG apply -f spring-minikube/devops/deployment-rating.yml
