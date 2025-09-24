@@ -1,20 +1,26 @@
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: gateway-ingress
   annotations:
-    ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /
     kubernetes.io/ingress.class: "nginx"
 spec:
   rules:
   - host: mysite.com
     http:
       paths:
-      - backend:
-          serviceName: student-service
-          servicePort: 7000
-        path: /student
-      - backend:
-          serviceName: rating-service
-          servicePort: 5000
-        path: /rating
+      - path: /student
+        pathType: Prefix
+        backend:
+          service:
+            name: student-service
+            port:
+              number: 7000
+      - path: /rating
+        pathType: Prefix
+        backend:
+          service:
+            name: rating-service
+            port:
+              number: 5000
