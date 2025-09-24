@@ -147,21 +147,34 @@ pipeline {
 
                 # Get Minikube IP dynamically
                 MINIKUBE_IP=$(minikube ip)
-                TARGET_STUDENT="http://$MINIKUBE_IP:30001/student"
-                TARGET_RATING="http://$MINIKUBE_IP:30002/rating"
+                TARGET_STUDENT="http://$MINIKUBE_IP:30001/"
+                TARGET_RATING="http://$MINIKUBE_IP:30002/"
                 echo "Targets: $TARGET_STUDENT , $TARGET_RATING"
 
-                # Wait until services are ready
+                # Wait until pods are ready
                 kubectl --kubeconfig=$KUBECONFIG wait --for=condition=ready pod -l run=student-service --timeout=60s
                 kubectl --kubeconfig=$KUBECONFIG wait --for=condition=ready pod -l run=rating-service --timeout=60s
 
-                # Run baseline scan for student service
-                docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
-                    -t $TARGET_STUDENT -r zap-student-report.html -J zap-student-report.json || true
+                # Wait until services respond on HTTP
+                echo "Waiting for student-service to respond..."
+                until curl --silent --fail $TARGET_STUDENT; do
+                    echo "Waiting for student-service HTTP response..."
+                    sleep 5
+                done
 
-                # Run baseline scan for rating service
+                echo "Waiting for rating-service to respond..."
+                until curl --silent --fail $TARGET_RATING; do
+                    echo "Waiting for rating-service HTTP response..."
+                    sleep 5
+                done
+
+                # Run baseline scan for student service with verbose logs
                 docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
-                    -t $TARGET_RATING -r zap-rating-report.html -J zap-rating-report.json || true
+                    -t $TARGET_STUDENT -r zap-student-report.html -J zap-student-report.json -v || true
+
+                # Run baseline scan for rating service with verbose logs
+                docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
+                    -t $TARGET_RATING -r zap-rating-report.html -J zap-rating-report.json -v || true
                 '''
             }
             post {
