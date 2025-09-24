@@ -3,7 +3,7 @@ apiVersion: v1
 metadata:
   name: student-service
 spec:
-  clusterIP: None
+  type: NodePort         # change here
   selector:
     run: student-service
   ports:
@@ -11,3 +11,4 @@ spec:
       protocol: TCP
       port: 7000
       targetPort: 7000
+      nodePort: 30001    # assign a free port
