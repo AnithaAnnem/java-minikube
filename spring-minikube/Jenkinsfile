@@ -138,20 +138,30 @@ pipeline {
             steps {
                 sh '''
                 echo "Running OWASP ZAP DAST Scan..."
+
                 # Get Minikube IP dynamically
                 MINIKUBE_IP=$(minikube ip)
-                TARGET_URL="http://$MINIKUBE_IP"
-                echo "Target: $TARGET_URL"
+                TARGET_STUDENT="http://$MINIKUBE_IP:7000/student"
+                TARGET_RATING="http://$MINIKUBE_IP:5000/rating"
+                echo "Targets: $TARGET_STUDENT , $TARGET_RATING"
 
+                # Wait for services to be ready
+                sleep 15
+
+                # Run baseline scan for student service
                 docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
-                    -t $TARGET_URL -r zap-report.html -J zap-report.json || true
+                    -t $TARGET_STUDENT -r zap-student-report.html -J zap-student-report.json || true
+
+                # Run baseline scan for rating service
+                docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
+                    -t $TARGET_RATING -r zap-rating-report.html -J zap-rating-report.json || true
                 '''
             }
             post {
                 always {
-                    archiveArtifacts artifacts: 'zap-report.html,zap-report.json', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'zap-*-report.*', allowEmptyArchive: true
                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, keepAll: true,
-                        reportDir: '.', reportFiles: 'zap-report.html', reportName: 'OWASP ZAP Report'])
+                        reportDir: '.', reportFiles: 'zap-*-report.html', reportName: 'OWASP ZAP Report'])
                 }
             }
         }
