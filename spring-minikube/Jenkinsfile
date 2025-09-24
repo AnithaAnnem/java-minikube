@@ -134,6 +134,8 @@ pipeline {
     steps {
         sh '''
         export MINIKUBE_HOME=/var/lib/jenkins/.minikube
+        export HOME=/var/lib/jenkins
+        minikube delete || true
         minikube start --driver=docker
         minikube status
         '''
