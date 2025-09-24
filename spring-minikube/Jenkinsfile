@@ -141,12 +141,13 @@ pipeline {
 
                 # Get Minikube IP dynamically
                 MINIKUBE_IP=$(minikube ip)
-                TARGET_STUDENT="http://$MINIKUBE_IP:7000/student"
-                TARGET_RATING="http://$MINIKUBE_IP:5000/rating"
+                TARGET_STUDENT="http://$MINIKUBE_IP:30001/student"
+                TARGET_RATING="http://$MINIKUBE_IP:30002/rating"
                 echo "Targets: $TARGET_STUDENT , $TARGET_RATING"
 
-                # Wait for services to be ready
-                sleep 15
+                # Wait until services are ready
+                kubectl --kubeconfig=$KUBECONFIG wait --for=condition=ready pod -l run=student-service --timeout=60s
+                kubectl --kubeconfig=$KUBECONFIG wait --for=condition=ready pod -l run=rating-service --timeout=60s
 
                 # Run baseline scan for student service
                 docker run --rm -v $WORKSPACE:/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py \
@@ -173,10 +174,10 @@ pipeline {
             echo "Pipeline finished. Sending notifications..."
         }
         success {
-            echo " Build, Security Checks & Deployment Successful!"
+            echo "Build, Security Checks & Deployment Successful!"
         }
         failure {
-            echo " Pipeline Failed!"
+            echo "Pipeline Failed!"
         }
     }
 }
