@@ -9,8 +9,6 @@ pipeline {
     environment {
         SONARQUBE_ENV = 'sonar-java'
         SONAR_AUTH_TOKEN = credentials('anitha-sonar')
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
-        DOCKERHUB_USER = "anithaannem"   // change to your DockerHub username
         KUBECONFIG = '/var/lib/jenkins/.kube/config'
     }
 
@@ -84,21 +82,29 @@ pipeline {
 
         stage('Build & Push Student Service Image') {
             steps {
-                sh '''
-                echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-                docker build -t $DOCKERHUB_USER/student-service:1.0 spring-minikube/student-service/
-                docker push $DOCKERHUB_USER/student-service:1.0
-                '''
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', 
+                                                  usernameVariable: 'DOCKER_USER', 
+                                                  passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker build -t $DOCKER_USER/student-service:1.0 spring-minikube/student-service/
+                    docker push $DOCKER_USER/student-service:1.0
+                    '''
+                }
             }
         }
 
         stage('Build & Push Rating Service Image') {
             steps {
-                sh '''
-                echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-                docker build -t $DOCKERHUB_USER/rating-service:1.0 spring-minikube/rating-service/
-                docker push $DOCKERHUB_USER/rating-service:1.0
-                '''
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', 
+                                                  usernameVariable: 'DOCKER_USER', 
+                                                  passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker build -t $DOCKER_USER/rating-service:1.0 spring-minikube/rating-service/
+                    docker push $DOCKER_USER/rating-service:1.0
+                    '''
+                }
             }
         }
 
