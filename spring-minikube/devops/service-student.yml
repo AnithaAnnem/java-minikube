@@ -1,14 +1,14 @@
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
   name: student-service
 spec:
-  type: NodePort         # change here
+  type: NodePort          # <--- Add this
   selector:
     run: student-service
   ports:
-    - name: port1
+    - name: http
       protocol: TCP
       port: 7000
       targetPort: 7000
-      nodePort: 30001    # assign a free port
+      nodePort: 30001      # <--- NodePort to access externally
