@@ -10,6 +10,7 @@ pipeline {
         SONARQUBE_ENV = 'sonar-java'
         SONAR_AUTH_TOKEN = credentials('anitha-sonar')
         KUBECONFIG = '/var/lib/jenkins/.kube/config'
+        MINIKUBE_HOME = '/var/lib/jenkins/.minikube'  // ensures Jenkins has its own Minikube config
         DOCKERHUB_USER = "anithaannem"
     }
 
@@ -129,6 +130,16 @@ pipeline {
             }
         }
 
+        stage('Start Minikube') {
+            steps {
+                sh '''
+                echo "Starting Minikube..."
+                minikube start --driver=docker
+                minikube status
+                '''
+            }
+        }
+
         stage('Setup K8s Configs') {
             steps {
                 sh '''
@@ -139,15 +150,6 @@ pipeline {
                 '''
             }
         }
-        stage('Start Minikube') {
-    steps {
-        sh '''
-        echo "Starting Minikube..."
-        minikube start --driver=docker
-        minikube status
-        '''
-    }
-}
 
         stage('Deploy Student Service') {
             steps {
