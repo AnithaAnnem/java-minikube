@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: rating-service
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     run: rating-service
   ports:
@@ -11,4 +11,3 @@ spec:
       protocol: TCP
       port: 5000
       targetPort: 5000
-      nodePort: 30002
