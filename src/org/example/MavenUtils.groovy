@@ -13,7 +13,6 @@ class MavenUtils implements Serializable {
         script.junit "${path}/target/surefire-reports/*.xml"
     }
 
-    // SonarQube Analysis
     static void sonarAnalysis(script, String path, String projectKey, String sonarEnv, String sonarToken) {
         script.withSonarQubeEnv("${sonarEnv}") {
             script.sh """
