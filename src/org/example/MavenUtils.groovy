@@ -1,22 +1,27 @@
-script.stage('SonarQube Analysis') {
-    script.withCredentials([script.string(
-        credentialsId: config.SONARQ_CRED ?: 'anitha-sonar', 
-        variable: 'SONAR_AUTH_TOKEN'
-    )]) {
-        MavenUtils.sonarAnalysis(
-            script,
-            'spring-minikube/student-service',
-            'student-service',
-            config.SONARQUBE_ENV ?: 'sonar-java',
-            script.env.SONAR_AUTH_TOKEN
-        )
+package org.example
 
-        MavenUtils.sonarAnalysis(
-            script,
-            'spring-minikube/rating-service',
-            'rating-service',
-            config.SONARQUBE_ENV ?: 'sonar-java',
-            script.env.SONAR_AUTH_TOKEN
-        )
+class MavenUtils implements Serializable {
+
+    // Package a Maven service
+    static void packageService(script, String path) {
+        script.sh "mvn clean package -f ${path}/pom.xml"
+    }
+
+    // Run unit tests and publish results
+    static void runTests(script, String path) {
+        script.sh "mvn test -f ${path}/pom.xml"
+        script.junit "${path}/target/surefire-reports/*.xml"
+    }
+
+    // SonarQube Analysis
+    static void sonarAnalysis(script, String path, String projectKey, String sonarEnv, String sonarToken) {
+        script.withSonarQubeEnv("${sonarEnv}") {
+            script.sh """
+                mvn sonar:sonar -f ${path}/pom.xml \
+                    -Dsonar.projectKey=${projectKey} \
+                    -Dsonar.host.url=\$SONAR_HOST_URL \
+                    -Dsonar.login=${sonarToken}
+            """
+        }
     }
 }
