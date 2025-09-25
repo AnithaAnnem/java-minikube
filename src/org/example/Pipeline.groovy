@@ -71,8 +71,8 @@ class Pipeline implements Serializable {
 
             // Build & Push Docker Images
             script.stage('Build & Push Docker Images') {
-                DockerUtils.buildPush(script, 'student-service', 'spring-minikube/student-service')
-                DockerUtils.buildPush(script, 'rating-service', 'spring-minikube/rating-service')
+                DockerUtils.buildPush(script, 'student-service', 'spring-minikube/student-service', config.DOCKER_USER ?: null)
+                DockerUtils.buildPush(script, 'rating-service', 'spring-minikube/rating-service', config.DOCKER_USER ?: null)
             }
 
             // Start Minikube
@@ -80,9 +80,9 @@ class Pipeline implements Serializable {
                 MinikubeUtils.start(script)
             }
 
-            // Apply Kubernetes configs
-            script.stage('Setup K8s Configs') {
-                MinikubeUtils.applyConfigs(script)
+            // Deploy Databases (before applications)
+            script.stage('Deploy Databases') {
+                MinikubeUtils.deployDatabases(script)
             }
 
             // Deploy services
