@@ -37,4 +37,4 @@ spec:
       volumes:
       - name: student-pv
         persistentVolumeClaim:
-          claimName: student-pvc
+          claimName: student-mysql-pvc
