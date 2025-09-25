@@ -1,8 +1,14 @@
-@Library('java-lib') _
+@Library('java-lib') _  
 import org.example.Pipeline
 
 def pipeline = new Pipeline(this)
+
 pipeline.run([
     GIT_URL: 'https://github.com/AnithaAnnem/java-minikube.git',
-    BRANCH: 'main'
+    BRANCH: 'main',
+    SONARQUBE_ENV: 'sonar-java',   
+    SONARQ_CRED: 'anitha-sonar',   
+    MINIKUBE_HOME: '/var/lib/jenkins/.minikube', 
+    HOME: '/var/lib/jenkins',                     
+    DOCKER_USER: 'anithaannem'                    
 ])
