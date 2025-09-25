@@ -30,20 +30,26 @@ class Pipeline implements Serializable {
             }
 
             script.stage('SonarQube Analysis') {
-                MavenUtils.sonarAnalysis(
-                    script,
-                    'spring-minikube/student-service',
-                    'student-service',
-                    config.SONARQUBE_ENV ?: 'sonar-java',
-                    script.credentials(config.SONARQ_CRED ?: 'anitha-sonar')
-                )
-                MavenUtils.sonarAnalysis(
-                    script,
-                    'spring-minikube/rating-service',
-                    'rating-service',
-                    config.SONARQUBE_ENV ?: 'sonar-java',
-                    script.credentials(config.SONARQ_CRED ?: 'anitha-sonar')
-                )
+                script.withCredentials([script.string(
+                    credentialsId: config.SONARQ_CRED ?: 'anitha-sonar', 
+                    variable: 'SONAR_AUTH_TOKEN'
+                )]) {
+                    MavenUtils.sonarAnalysis(
+                        script,
+                        'spring-minikube/student-service',
+                        'student-service',
+                        config.SONARQUBE_ENV ?: 'sonar-java',
+                        script.env.SONAR_AUTH_TOKEN
+                    )
+
+                    MavenUtils.sonarAnalysis(
+                        script,
+                        'spring-minikube/rating-service',
+                        'rating-service',
+                        config.SONARQUBE_ENV ?: 'sonar-java',
+                        script.env.SONAR_AUTH_TOKEN
+                    )
+                }
             }
 
             script.stage('Build & Push Docker Images') {
@@ -67,7 +73,7 @@ class Pipeline implements Serializable {
                 SecurityUtils.dastScan(script)
             }
 
-            script.echo " Pipeline Completed Successfully!"
+            script.echo "Pipeline Completed Successfully!"
         } 
     }
 }
