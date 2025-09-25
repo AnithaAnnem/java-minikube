@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: rating-service
-        image: anithaannem/rating-service:latest
+        image: anithaannem/rating-service:1.0
         ports:
         - containerPort: 5000
           protocol: TCP
