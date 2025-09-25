@@ -20,3 +20,21 @@ spec:
         ports:
         - containerPort: 7000
           protocol: TCP
+        env:
+        - name: DB_HOST
+          value: student-db
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: studentdb
+        - name: DB_USER
+          value: studentuser
+        - name: DB_PASSWORD
+          value: studentpass
+        volumeMounts:
+        - name: student-pv
+          mountPath: /var/lib/student-data
+      volumes:
+      - name: student-pv
+        persistentVolumeClaim:
+          claimName: student-pvc
