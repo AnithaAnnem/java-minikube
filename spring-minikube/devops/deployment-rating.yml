@@ -37,4 +37,4 @@ spec:
       volumes:
       - name: rating-pv
         persistentVolumeClaim:
-          claimName: rating-pvc
+          claimName: rating-mysql-pvc
