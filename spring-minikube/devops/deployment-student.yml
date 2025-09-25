@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: student-service
-        image: nhatthai/student-service:latest
+        image: anithaannem/student-service:latest
         ports:
         - containerPort: 7000
           protocol: TCP
