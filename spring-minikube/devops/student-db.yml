@@ -1,19 +1,9 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: student-mysql-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
----
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: student-mysql
 spec:
+  serviceName: "student-mysql"
   replicas: 1
   selector:
     matchLabels:
@@ -28,18 +18,30 @@ spec:
         image: mysql:8.0
         env:
         - name: MYSQL_ROOT_PASSWORD
-          value: rootpassword
+          valueFrom:
+            secretKeyRef:
+              name: student-db-secret
+              key: mysql-root-password
         - name: MYSQL_DATABASE
           value: studentdb
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: student-db-secret
+              key: db-password
         ports:
         - containerPort: 3306
         volumeMounts:
-        - name: student-mysql-storage
+        - name: mysql-storage
           mountPath: /var/lib/mysql
-      volumes:
-      - name: student-mysql-storage
-        persistentVolumeClaim:
-          claimName: student-mysql-pvc
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 5Gi
 ---
 apiVersion: v1
 kind: Service
@@ -52,4 +54,4 @@ spec:
   - protocol: TCP
     port: 3306
     targetPort: 3306
-  type: ClusterIP
+  clusterIP: None   
