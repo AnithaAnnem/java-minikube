@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @RestController
 public class RatingController {
 
-    @GetMapping("/")   // root path
+    @GetMapping("/")   // root path for Ingress
     public String home() {
         return "Rating Service Home";
     }
