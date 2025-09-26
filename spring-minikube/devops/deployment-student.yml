@@ -22,19 +22,15 @@ spec:
           protocol: TCP
         env:
         - name: DB_HOST
-          value: student-db
+          value: student-mysql
         - name: DB_PORT
-          value: "5432"
+          value: "3306"
         - name: DB_NAME
           value: studentdb
         - name: DB_USER
           value: studentuser
         - name: DB_PASSWORD
-          value: studentpass
-        volumeMounts:
-        - name: student-pv
-          mountPath: /var/lib/student-data
-      volumes:
-      - name: student-pv
-        persistentVolumeClaim:
-          claimName: student-mysql-pvc
+          valueFrom:
+            secretKeyRef:
+              name: student-db-secret
+              key: db-password
