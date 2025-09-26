@@ -10,14 +10,14 @@ spec:
   - host: mysite.local
     http:
       paths:
-      - path: /student(/|$)(.*)
+      - path: /student
         pathType: Prefix
         backend:
           service:
             name: student-service
             port:
               number: 7000
-      - path: /rating(/|$)(.*)
+      - path: /rating
         pathType: Prefix
         backend:
           service:
