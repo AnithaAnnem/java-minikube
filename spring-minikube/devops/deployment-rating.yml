@@ -22,19 +22,15 @@ spec:
           protocol: TCP
         env:
         - name: DB_HOST
-          value: rating-db
+          value: rating-mysql
         - name: DB_PORT
-          value: "5432"
+          value: "3306"
         - name: DB_NAME
           value: ratingdb
         - name: DB_USER
           value: ratinguser
         - name: DB_PASSWORD
-          value: ratingpass
-        volumeMounts:
-        - name: rating-pv
-          mountPath: /var/lib/rating-data
-      volumes:
-      - name: rating-pv
-        persistentVolumeClaim:
-          claimName: rating-mysql-pvc
+          valueFrom:
+            secretKeyRef:
+              name: rating-db-secret
+              key: db-password
