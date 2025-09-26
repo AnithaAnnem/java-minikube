@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: config-server
-          image: anithaannem/config-server:1.0
+          image: anithaannem/config-server:1.0.0
           ports:
             - containerPort: 8888
           imagePullPolicy: Always
