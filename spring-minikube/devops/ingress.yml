@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: gateway-ingress
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /   # Forward everything to root of service
+    # No rewrite-target, keep paths as-is
 spec:
   ingressClassName: nginx
   rules:
