@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy the Maven build jar into the container
 # Make sure you build the jar first: mvn clean package
-COPY target/config-server-1.0.jar app.jar
+COPY target/config-server-1.0.0.jar app.jar
 
 # Expose the port your config server runs on
 EXPOSE 8888
