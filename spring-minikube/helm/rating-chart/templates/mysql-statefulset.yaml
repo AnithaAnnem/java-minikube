@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rating-mysql
+spec:
+  serviceName: rating-mysql
+  replicas: {{ .Values.mysql.replicas }}
+  selector:
+    matchLabels:
+      app: rating-mysql
+  template:
+    metadata:
+      labels:
+        app: rating-mysql
+    spec:
+      containers:
+        - name: rating-mysql
+          image: {{ .Values.mysql.image }}
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rating-mysql-secret
+                  key: mysql-root-password
+            - name: MYSQL_DATABASE
+              value: {{ .Values.mysql.database }}
+            - name: MYSQL_USER
+              value: {{ .Values.mysql.user }}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rating-mysql-secret
+                  key: db-password
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.mysql.storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rating-mysql
+spec:
+  selector:
+    app: rating-mysql
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+  clusterIP: None

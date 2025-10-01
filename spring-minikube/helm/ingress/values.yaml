@@ -1,0 +1,11 @@
+student:
+  service:
+    name: student-chart
+    port: 7000
+
+rating:
+  service:
+    name: rating-chart
+    port: 5000
+
+host: student.local   # or 127.0.0.1

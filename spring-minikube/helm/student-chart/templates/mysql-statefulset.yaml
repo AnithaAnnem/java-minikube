@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: student-mysql
+spec:
+  serviceName: student-mysql
+  replicas: {{ .Values.mysql.replicas }}
+  selector:
+    matchLabels:
+      app: student-mysql
+  template:
+    metadata:
+      labels:
+        app: student-mysql
+    spec:
+      containers:
+        - name: student-mysql
+          image: {{ .Values.mysql.image }}
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: student-mysql-secret
+                  key: mysql-root-password
+            - name: MYSQL_DATABASE
+              value: {{ .Values.mysql.database }}
+            - name: MYSQL_USER
+              value: {{ .Values.mysql.user }}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: student-mysql-secret
+                  key: db-password
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.mysql.storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: student-mysql
+spec:
+  selector:
+    app: student-mysql
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+  clusterIP: None

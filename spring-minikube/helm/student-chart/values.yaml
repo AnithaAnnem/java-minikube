@@ -1,0 +1,23 @@
+replicaCount: 1
+
+image:
+  repository: anithaannem/student-service
+  tag: 1.0
+  pullPolicy: IfNotPresent
+
+service:
+  name: student-service
+  port: 7000
+  type: ClusterIP
+
+ingress:
+  host: student.local
+
+mysql:
+  image: mysql:8.0
+  rootPassword: cm9vdHBhc3N3b3Jk   # base64 encoded
+  database: studentdb
+  user: studentuser
+  password: c3R1ZGVudHBhc3M=      # base64 encoded
+  storage: 5Gi
+  replicas: 1
