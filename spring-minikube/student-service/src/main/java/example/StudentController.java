@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @RestController
 public class StudentController {
 
-    @GetMapping("/")  // root path for Ingress /student
+    @GetMapping("/student")  // root path for Ingress /student
     public String home() {
         return "Student Service Home";
     }
