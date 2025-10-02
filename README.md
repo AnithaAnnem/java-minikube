@@ -6,7 +6,6 @@ ArgoCD is a **Kubernetes-native continuous deployment (CD) tool** that implement
 
 **Key Point:** ArgoCD makes Git the **single source of truth** for your deployments.
 
-**Video Reference:** [TechWorld with Nana – ArgoCD Tutorial](https://www.youtube.com/watch?v=MeU5_k9ssrs&t=45s)
 
 ---
 
