@@ -17,8 +17,6 @@ ArgoCD is a **Kubernetes-native continuous deployment (CD) tool** that implement
   - [Without Kubernetes](#without-kubernetes)  
   - [With Kubernetes & ArgoCD](#with-kubernetes--argocd)  
 - [Benefits of ArgoCD](#benefits-of-argocd)  
-- [Limitations](#limitations)  
-- [Installing & Configuring ArgoCD](#installing--configuring-argocd)  
 - [ArgoCD CLI Commands](#argocd-cli-commands)  
 - [References](#references)
 
@@ -63,7 +61,7 @@ Traditional CI/CD pipeline without Kubernetes:
 - Rollbacks are simple: revert Git commits to restore previous state.  
 - Provides **UI monitoring, sync status, and health checks**.
 
-  ## Benefits of ArgoCD
+## Benefits of ArgoCD
 
 - **Git as Single Source of Truth** – All cluster configurations are version-controlled in Git.  
 - **Easy Rollback** – Restore previous versions by reverting Git commits.  
