@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rating-service-canary
+  labels:
+    run: rating-service
+    version: canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: rating-service
+      version: canary
+  template:
+    metadata:
+      labels:
+        run: rating-service
+        version: canary
+    spec:
+      containers:
+      - name: rating-service
+        image: anithaannem/rating-service:2.0
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DB_HOST
+          value: rating-mysql
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_NAME
+          value: ratingdb
+        - name: DB_USER
+          value: ratinguser
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: rating-mysql-secret
+              key: db-password
