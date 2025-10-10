@@ -41,6 +41,7 @@ spec:
         name: mysql-storage
       spec:
         accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.mysql.storageClass | quote }}
         resources:
           requests:
             storage: {{ .Values.mysql.storage }}

@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: anithaannem/student-service
-  tag: 1.0
+  tag: "1.0"
   pullPolicy: IfNotPresent
 
 service:
@@ -20,4 +20,5 @@ mysql:
   user: studentuser
   password: c3R1ZGVudHBhc3M=      # base64 encoded
   storage: 5Gi
+  storageClass: "gp2"
   replicas: 1

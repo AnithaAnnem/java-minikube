@@ -2,14 +2,28 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: gateway-ingress
+  namespace: prod
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - app.cloudninja.live
+    secretName: cloudninja-tls
   rules:
-  - host: mysite.local
+  - host: app.cloudninja.live
     http:
       paths:
+      # HTTP01 challenge path for cert-manager
+      - path: /.well-known/acme-challenge/
+        pathType: Prefix
+        backend:
+          service:
+            name: default-backend
+            port:
+              number: 80
+      # Student service path
       - path: /student
         pathType: Prefix
         backend:
@@ -17,6 +31,7 @@ spec:
             name: student-service
             port:
               number: 7000
+      # Rating service path
       - path: /rating
         pathType: Prefix
         backend:

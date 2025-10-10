@@ -1,0 +1,8 @@
+ingress:
+  host: rating.prod.local
+
+mysql:
+  replicas: 1
+  storage: 10Gi
+
+replicaCount: 1

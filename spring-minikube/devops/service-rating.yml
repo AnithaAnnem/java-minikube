@@ -5,7 +5,7 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    run: rating-service
+    app: rating-chart
   ports:
     - name: http
       protocol: TCP

@@ -1,0 +1,8 @@
+ingress:
+  host: student.dev.local
+
+mysql:
+  replicas: 1
+  storage: 5Gi
+
+replicaCount: 1
