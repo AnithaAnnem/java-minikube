@@ -1,0 +1,37 @@
+apiVersion: v1
+data:
+  mapRoles: |
+    - rolearn: arn:aws:iam::893978477013:role/eksctl-my-eks-cluster-nodegroup-ng-NodeInstanceRole-R8HX3sxrrOcB
+      username: system:node:{{EC2PrivateDNSName}}
+      groups:
+        - system:bootstrappers
+        - system:nodes
+
+  mapUsers: |
+    # Admin user (full cluster access)
+    - userarn: arn:aws:iam::893978477013:user/aws-admin
+      username: admin
+      groups:
+        - system:masters
+
+    # Developer (only dev namespace)
+    - userarn: arn:aws:iam::893978477013:user/dev-user
+      username: dev-user
+      groups:
+        - dev-group
+
+    # Staging user (only staging namespace)
+    - userarn: arn:aws:iam::893978477013:user/staging-user
+      username: staging-user
+      groups:
+        - staging-group
+
+    # Production user (only prod namespace)
+    - userarn: arn:aws:iam::893978477013:user/prod-user
+      username: prod-user
+      groups:
+        - prod-group
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
