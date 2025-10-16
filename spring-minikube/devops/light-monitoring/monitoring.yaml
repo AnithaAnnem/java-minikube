@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: light-monitoring
+  namespace: monitoring
+  labels:
+    app: light-monitoring
+spec:
+  serviceAccountName: prometheus
+  containers:
+  - name: prometheus
+    image: prom/prometheus:v2.54.0
+    args:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - containerPort: 9090
+    volumeMounts:
+      - name: prometheus-config
+        mountPath: /etc/prometheus
+  - name: grafana
+    image: grafana/grafana:10.4.2
+    ports:
+      - containerPort: 3000
+  - name: node-exporter
+    image: prom/node-exporter:v1.7.0
+    args:
+      - "--path.rootfs=/"
+    ports:
+      - containerPort: 9100
+  volumes:
+  - name: prometheus-config
+    configMap:
+      name: prometheus-config

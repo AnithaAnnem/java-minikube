@@ -39,6 +39,7 @@ spec:
       name: mysql-storage
     spec:
       accessModes: ["ReadWriteOnce"]
+      storageClassName: gp2-csi
       resources:
         requests:
           storage: 5Gi
