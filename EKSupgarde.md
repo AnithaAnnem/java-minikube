@@ -34,11 +34,11 @@ The playbook covers:
 
 ---
 
-## ⚙️ Prerequisites
+##  Prerequisites
 
 Before starting the upgrade, ensure the following:
 
-### 🔍 1. Check Current Versions
+###  1. Check Current Versions
 ```bash
 aws eks describe-cluster --name <cluster_name> --query "cluster.version" --output text
 ```
@@ -77,7 +77,7 @@ Ensure your IAM role has the following permissions:
 
 - eks:UpdateNodegroupVersion
 # Steps to upgrade the EKS Cluster
-# Step 1: Review Cluster and Node Versions
+## Step 1: Review Cluster and Node Versions
 ```
 aws eks describe-cluster --name <cluster_name> --query "cluster.version" --output text
 kubectl version --short
@@ -90,7 +90,7 @@ Describe each node group:
 ```
 aws eks describe-nodegroup --cluster-name <cluster_name> --nodegroup-name <node_group_name> --query "nodegroup.version"
 ```
-# Step 2: Upgrade the Control Plane
+## Step 2: Upgrade the Control Plane
 Upgrade to the next Kubernetes version:
 ```
 aws eks update-cluster-version --name <cluster_name> --kubernetes-version <target_version>
@@ -106,8 +106,8 @@ aws eks describe-cluster --name <cluster_name> --query "cluster.status"
 
 Wait until status = ACTIVE.
 
-# Step 3: Upgrade Core EKS Add-ons
-## 3.1. Amazon VPC CNI
+## Step 3: Upgrade Core EKS Add-ons
+### 3.1. Amazon VPC CNI
 ```
 eksctl utils update-cni --cluster <cluster_name> --approve
 ```
@@ -115,7 +115,7 @@ Or via console:
 ```
 aws eks update-addon --cluster-name <cluster_name> --addon-name vpc-cni
 ```
-## 3.2. CoreDNS
+### 3.2. CoreDNS
 ```
 aws eks update-addon --cluster-name <cluster_name> --addon-name coredns
 ```
@@ -123,12 +123,12 @@ Check rollout:
 ```
 kubectl get pods -n kube-system -l k8s-app=kube-dns
 ```
-## 3.3. kube-proxy
+### 3.3. kube-proxy
 ```
 aws eks update-addon --cluster-name <cluster_name> --addon-name kube-proxy
 ```
-# Step 4: Upgrade Worker Nodes
-## 4.1. For Managed Node Groups
+## Step 4: Upgrade Worker Nodes
+### 4.1. For Managed Node Groups
 ```
 aws eks update-nodegroup-version --cluster-name <cluster_name> --nodegroup-name <node_group_name>
 ```
@@ -138,7 +138,7 @@ aws eks describe-nodegroup --cluster-name <cluster_name> --nodegroup-name <node_
 ```
 Wait until status = ACTIVE.
 
-## 4.2. For Self-Managed Nodes
+### 4.2. For Self-Managed Nodes
 
 - Update your node AMI ID in the Auto Scaling Group (ASG).
 
@@ -151,7 +151,7 @@ kubectl drain <node_name> --ignore-daemonsets --delete-emptydir-data
 kubectl delete node <node_name>
 ```
 
-# Step 5: Post-Upgrade Verification
+## Step 5: Post-Upgrade Verification
 1. Verify cluster and node versions:
 ```
 kubectl version --short
